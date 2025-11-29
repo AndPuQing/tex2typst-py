@@ -5,7 +5,6 @@ const JS_CODE: &str = include_str!("../dist/tex2typst.bundle.js");
 
 #[pyclass(unsendable)]
 struct Tex2Typst {
-    rt: Runtime,
     ctx: Context,
 }
 
@@ -24,7 +23,7 @@ impl Tex2Typst {
             })
         })?;
 
-        Ok(Tex2Typst { rt, ctx })
+        Ok(Tex2Typst { ctx })
     }
 
     fn convert(&self, latex: String) -> PyResult<String> {
@@ -47,7 +46,7 @@ impl Tex2Typst {
 }
 
 #[pymodule]
-fn pytex2typst(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn tex2typst(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Tex2Typst>()?;
     Ok(())
 }

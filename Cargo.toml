@@ -1,10 +1,10 @@
 [package]
-name = "pytex2typst"
+name = "tex2typst"
 version = "0.1.0"
 edition = "2024"
 
 [lib]
-name = "pytex2typst"
+name = "tex2typst"
 crate-type = ["cdylib"]
 
 [dependencies]
