@@ -1,0 +1,11 @@
+{
+  "name": "pytex2typst",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "PuQing <me@puqing.work>",
+  "license": "MIT",
+  "dependencies": {
+    "esbuild": "^0.27.0",
+    "tex2typst": "^0.4.1"
+  }
+}
