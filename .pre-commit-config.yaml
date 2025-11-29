@@ -20,7 +20,7 @@ repos:
     hooks:
       - id: generate-js
         name: Generate JavaScript
-        entry: yarn install && just dist
+        entry: just dist
         language: system
         files: package.json
         pass_filenames: false

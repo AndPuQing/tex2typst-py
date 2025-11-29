@@ -166,5 +166,5 @@ esbuild@^0.27.0:
 
 tex2typst@^0.5.0:
   version "0.5.0"
-  resolved "https://registry.yarnpkg.com/tex2typst/-/tex2typst-0.5.0.tgz#073e4f52af3ede7932afdf44dbc90cff02df1a88"
+  resolved "https://registry.npmmirror.com/tex2typst/-/tex2typst-0.5.0.tgz#073e4f52af3ede7932afdf44dbc90cff02df1a88"
   integrity sha512-jFN7WXqs+gKJLAdQxj50wsuPtvIaGKkplYavuYDYO/Urjg4nh6Kn48HtRv+9BPx141Y9aTPPHll+/4dAcXkJOw==
