@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use rquickjs::{Context, Function, Runtime};
 
-const JS_CODE: &str = include_str!("../dist/tex2typst.bundle.js");
+const JS_CODE: &str = include_str!("../js/tex2typst.bundle.js");
 
 #[pyclass(unsendable)]
 struct Tex2Typst {
