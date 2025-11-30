@@ -4,16 +4,60 @@ build-backend = "maturin"
 
 [project]
 name = "tex2typst"
+description = "A Python wrapper for tex2typst, providing seamless conversion between LaTeX/TeX math and Typst format"
+readme = "README.md"
 authors = [
     {name = "PuQing", email = "me@puqing.work"},
 ]
+license = "Apache 2.0"
 requires-python = ">=3.8"
+keywords = [
+    "latex",
+    "tex",
+    "typst",
+    "converter",
+    "math",
+    "formula",
+    "markup",
+]
 classifiers = [
-    "Programming Language :: Rust",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+    "Typing :: Typed",
 ]
 dynamic = ["version"]
 
 [project.urls]
+Homepage = "https://github.com/AndPuQing/tex2typst-py"
 Repository = "https://github.com/AndPuQing/tex2typst-py"
+"Bug Tracker" = "https://github.com/AndPuQing/tex2typst-py/issues"
+Changelog = "https://github.com/AndPuQing/tex2typst-py/releases"
+Documentation = "https://github.com/AndPuQing/tex2typst-py#readme"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-benchmark>=4.0",
+    "ruff>=0.4.0",
+    "pre-commit>=3.0",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-benchmark>=4.0",
+]
