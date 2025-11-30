@@ -1,3 +1,5 @@
-import { tex2typst } from "tex2typst";
+import { tex2typst, typst2tex } from "tex2typst";
 
-globalThis.convert = tex2typst;
+// Export both conversion functions to the global scope
+globalThis.tex2typst = tex2typst;
+globalThis.typst2tex = typst2tex;

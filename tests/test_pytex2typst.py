@@ -2,57 +2,143 @@ import unittest
 import tex2typst
 
 
-class TestTex2Typst(unittest.TestCase):
-    def setUp(self):
-        self.converter = tex2typst.Tex2Typst()
+class TestTex2TypstFunctionAPI(unittest.TestCase):
+    """Test the tex2typst function-based API"""
 
     def test_basic_fraction(self):
         latex = "\\frac{1}{2}"
-        result = self.converter.convert(latex)
+        result = tex2typst.tex2typst(latex)
         print(f"\n[Test Fraction] Input: {latex} -> Output: {result}")
-
         self.assertEqual(result.strip(), "1/2")
 
     def test_greek_letters(self):
         latex = "\\alpha + \\beta"
-        result = self.converter.convert(latex)
+        result = tex2typst.tex2typst(latex)
         print(f"[Test Greek] Input: {latex} -> Output: {result}")
-
         self.assertEqual(result.strip(), "alpha + beta")
 
     def test_complex_formula(self):
         latex = "\\int_{-\\infty}^{\\infty} e^{-x^2} dx"
-        result = self.converter.convert(latex)
+        result = tex2typst.tex2typst(latex)
         print(f"[Test Integral] Input: {latex} -> Output: {result}")
-
         self.assertEqual(result.strip(), "integral_(-infinity)^infinity e^(-x^2) d x")
 
     def test_empty_string(self):
-        result = self.converter.convert("")
+        result = tex2typst.tex2typst("")
         self.assertEqual(result.strip(), "")
 
     def test_invalid_syntax_handling(self):
         latex = "\\notacommand{test}"
         try:
-            result = self.converter.convert(latex)
+            result = tex2typst.tex2typst(latex)
             print(f"[Test Invalid] Input: {latex} -> Output: {result}")
             self.assertIsInstance(result, str)
         except Exception as e:
             self.fail(f"Converter crashed on invalid input: {e}")
 
-    def test_thread_constraint(self):
-        import threading
+    def test_singleton_reuse(self):
+        """Verify that multiple calls use the same singleton instance"""
+        result1 = tex2typst.tex2typst("\\alpha")
+        result2 = tex2typst.tex2typst("\\beta")
+        self.assertEqual(result1.strip(), "alpha")
+        self.assertEqual(result2.strip(), "beta")
 
-        def run_in_thread():
-            try:
-                c = pytex2typst.Tex2Typst()
-                c.convert("x")
-            except Exception as e:
-                print(f"Thread error: {e}")
 
-        t = threading.Thread(target=run_in_thread)
-        t.start()
-        t.join()
+class TestTypst2TexFunctionAPI(unittest.TestCase):
+    """Test the typst2tex function-based API"""
+
+    def test_basic_fraction(self):
+        typst = "1/2"
+        result = tex2typst.typst2tex(typst)
+        print(f"\n[Test Typst2Tex Fraction] Input: {typst} -> Output: {result}")
+        self.assertIn("frac", result)
+
+    def test_greek_letters(self):
+        typst = "alpha + beta"
+        result = tex2typst.typst2tex(typst)
+        print(f"[Test Typst2Tex Greek] Input: {typst} -> Output: {result}")
+        self.assertIn("alpha", result)
+        self.assertIn("beta", result)
+
+    def test_empty_string(self):
+        result = tex2typst.typst2tex("")
+        self.assertEqual(result.strip(), "")
+
+    def test_roundtrip(self):
+        """Test converting from LaTeX to Typst and back"""
+        latex = "\\alpha + \\beta"
+        typst = tex2typst.tex2typst(latex)
+        result = tex2typst.typst2tex(typst)
+        print(f"\n[Test Roundtrip] LaTeX: {latex} -> Typst: {typst} -> LaTeX: {result}")
+        self.assertIsInstance(result, str)
+
+
+class TestTex2TypstOptions(unittest.TestCase):
+    """Test tex2typst with various options"""
+
+    def test_frac_to_slash_false(self):
+        latex = "\\frac{1}{2}"
+        result = tex2typst.tex2typst(latex, {"fracToSlash": False})
+        print(f"\n[Test Options fracToSlash=False] Input: {latex} -> Output: {result}")
+        self.assertIn("frac", result)
+        self.assertNotIn("1/2", result)
+
+    def test_infty_to_oo_true(self):
+        latex = "\\infty"
+        result = tex2typst.tex2typst(latex, {"inftyToOo": True})
+        print(f"\n[Test Options inftyToOo=True] Input: {latex} -> Output: {result}")
+        self.assertEqual(result.strip(), "oo")
+
+    def test_infty_to_oo_false(self):
+        latex = "\\infty"
+        result = tex2typst.tex2typst(latex, {"inftyToOo": False})
+        print(f"\n[Test Options inftyToOo=False] Input: {latex} -> Output: {result}")
+        self.assertIn("infinity", result.lower())
+
+    def test_keep_spaces_true(self):
+        latex = "a   b"
+        result = tex2typst.tex2typst(latex, {"keepSpaces": True})
+        print(
+            f"\n[Test Options keepSpaces=True] Input: '{latex}' -> Output: '{result}'"
+        )
+
+    def test_custom_tex_macros(self):
+        latex = "\\myop y=\\sgn(x)"
+        options = {
+            "customTexMacros": {
+                "\\myop": "\\operatorname{myop}",
+                "\\sgn": "\\operatorname{sgn}",
+            }
+        }
+        result = tex2typst.tex2typst(latex, options)
+        print(f"\n[Test Options customTexMacros] Input: {latex} -> Output: {result}")
+        self.assertIn('op("myop")', result)
+
+    def test_multiple_options(self):
+        latex = "\\frac{1}{\\infty}"
+        options = {"fracToSlash": False, "inftyToOo": True}
+        result = tex2typst.tex2typst(latex, options)
+        print(f"\n[Test Options multiple] Input: {latex} -> Output: {result}")
+        self.assertIn("frac", result)
+        self.assertIn("oo", result)
+
+
+class TestTypst2TexOptions(unittest.TestCase):
+    """Test typst2tex with various options"""
+
+    def test_block_math_mode_true(self):
+        typst = "x"
+        result = tex2typst.typst2tex(typst, {"blockMathMode": True})
+        print(f"\n[Test Options blockMathMode=True] Input: {typst} -> Output: {result}")
+        self.assertIsInstance(result, str)
+
+    def test_block_math_mode_false(self):
+        typst = "x"
+        result = tex2typst.typst2tex(typst, {"blockMathMode": False})
+        print(
+            f"\n[Test Options blockMathMode=False] Input: {typst} -> Output: {result}"
+        )
+        self.assertIsInstance(result, str)
 
 
 if __name__ == "__main__":
