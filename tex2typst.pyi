@@ -1,3 +1,9 @@
+"""Type stubs for tex2typst module."""
+
+__version__: str
+
+__all__ = ["tex2typst", "typst2tex", "__version__"]
+
 def tex2typst(
     tex: str,
     *,

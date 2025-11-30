@@ -248,5 +248,6 @@ fn typst2tex(typst: String, block_math_mode: Option<bool>) -> PyResult<String> {
 fn tex2typst_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tex2typst, m)?)?;
     m.add_function(wrap_pyfunction!(typst2tex, m)?)?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }
