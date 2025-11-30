@@ -1,10 +1,29 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use rquickjs::{Context, Function, Runtime};
+use rquickjs::{CatchResultExt, CaughtError, Context, Function, Runtime};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
 const JS_CODE: &str = include_str!("../js/tex2typst.bundle.js");
+
+/// Format a QuickJS exception with detailed error information
+fn format_js_exception(error: CaughtError) -> String {
+    match error {
+        CaughtError::Exception(exception) => {
+            let message = exception
+                .message()
+                .unwrap_or_else(|| "Unknown error".to_string());
+
+            if let Some(stack) = exception.stack() {
+                format!("{}\nStack trace:\n{}", message, stack)
+            } else {
+                message
+            }
+        }
+        CaughtError::Error(err) => err.to_string(),
+        CaughtError::Value(val) => format!("JavaScript error: {:?}", val),
+    }
+}
 
 /// Internal converter instance
 struct ConverterInstance {
@@ -53,17 +72,17 @@ impl ConverterInstance {
                         ))
                     })?;
 
-                func.call((tex, js_options)).map_err(|e| {
+                func.call((tex, js_options)).catch(&ctx).map_err(|e| {
                     PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                         "Conversion failed: {}",
-                        e
+                        format_js_exception(e)
                     ))
                 })?
             } else {
-                func.call((tex,)).map_err(|e| {
+                func.call((tex,)).catch(&ctx).map_err(|e| {
                     PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                         "Conversion failed: {}",
-                        e
+                        format_js_exception(e)
                     ))
                 })?
             };
@@ -97,17 +116,17 @@ impl ConverterInstance {
                         ))
                     })?;
 
-                func.call((typst, js_options)).map_err(|e| {
+                func.call((typst, js_options)).catch(&ctx).map_err(|e| {
                     PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                         "Conversion failed: {}",
-                        e
+                        format_js_exception(e)
                     ))
                 })?
             } else {
-                func.call((typst,)).map_err(|e| {
+                func.call((typst,)).catch(&ctx).map_err(|e| {
                     PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                         "Conversion failed: {}",
-                        e
+                        format_js_exception(e)
                     ))
                 })?
             };
