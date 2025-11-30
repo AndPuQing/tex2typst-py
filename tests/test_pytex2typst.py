@@ -78,46 +78,47 @@ class TestTex2TypstOptions(unittest.TestCase):
 
     def test_frac_to_slash_false(self):
         latex = "\\frac{1}{2}"
-        result = tex2typst.tex2typst(latex, {"fracToSlash": False})
-        print(f"\n[Test Options fracToSlash=False] Input: {latex} -> Output: {result}")
+        result = tex2typst.tex2typst(latex, frac_to_slash=False)
+        print(
+            f"\n[Test Options frac_to_slash=False] Input: {latex} -> Output: {result}"
+        )
         self.assertIn("frac", result)
         self.assertNotIn("1/2", result)
 
     def test_infty_to_oo_true(self):
         latex = "\\infty"
-        result = tex2typst.tex2typst(latex, {"inftyToOo": True})
-        print(f"\n[Test Options inftyToOo=True] Input: {latex} -> Output: {result}")
+        result = tex2typst.tex2typst(latex, infty_to_oo=True)
+        print(f"\n[Test Options infty_to_oo=True] Input: {latex} -> Output: {result}")
         self.assertEqual(result.strip(), "oo")
 
     def test_infty_to_oo_false(self):
         latex = "\\infty"
-        result = tex2typst.tex2typst(latex, {"inftyToOo": False})
-        print(f"\n[Test Options inftyToOo=False] Input: {latex} -> Output: {result}")
+        result = tex2typst.tex2typst(latex, infty_to_oo=False)
+        print(f"\n[Test Options infty_to_oo=False] Input: {latex} -> Output: {result}")
         self.assertIn("infinity", result.lower())
 
     def test_keep_spaces_true(self):
         latex = "a   b"
-        result = tex2typst.tex2typst(latex, {"keepSpaces": True})
+        result = tex2typst.tex2typst(latex, keep_spaces=True)
         print(
-            f"\n[Test Options keepSpaces=True] Input: '{latex}' -> Output: '{result}'"
+            f"\n[Test Options keep_spaces=True] Input: '{latex}' -> Output: '{result}'"
         )
 
     def test_custom_tex_macros(self):
         latex = "\\myop y=\\sgn(x)"
-        options = {
-            "customTexMacros": {
+        result = tex2typst.tex2typst(
+            latex,
+            custom_tex_macros={
                 "\\myop": "\\operatorname{myop}",
                 "\\sgn": "\\operatorname{sgn}",
-            }
-        }
-        result = tex2typst.tex2typst(latex, options)
-        print(f"\n[Test Options customTexMacros] Input: {latex} -> Output: {result}")
+            },
+        )
+        print(f"\n[Test Options custom_tex_macros] Input: {latex} -> Output: {result}")
         self.assertIn('op("myop")', result)
 
     def test_multiple_options(self):
         latex = "\\frac{1}{\\infty}"
-        options = {"fracToSlash": False, "inftyToOo": True}
-        result = tex2typst.tex2typst(latex, options)
+        result = tex2typst.tex2typst(latex, frac_to_slash=False, infty_to_oo=True)
         print(f"\n[Test Options multiple] Input: {latex} -> Output: {result}")
         self.assertIn("frac", result)
         self.assertIn("oo", result)
@@ -128,15 +129,17 @@ class TestTypst2TexOptions(unittest.TestCase):
 
     def test_block_math_mode_true(self):
         typst = "x"
-        result = tex2typst.typst2tex(typst, {"blockMathMode": True})
-        print(f"\n[Test Options blockMathMode=True] Input: {typst} -> Output: {result}")
+        result = tex2typst.typst2tex(typst, block_math_mode=True)
+        print(
+            f"\n[Test Options block_math_mode=True] Input: {typst} -> Output: {result}"
+        )
         self.assertIsInstance(result, str)
 
     def test_block_math_mode_false(self):
         typst = "x"
-        result = tex2typst.typst2tex(typst, {"blockMathMode": False})
+        result = tex2typst.typst2tex(typst, block_math_mode=False)
         print(
-            f"\n[Test Options blockMathMode=False] Input: {typst} -> Output: {result}"
+            f"\n[Test Options block_math_mode=False] Input: {typst} -> Output: {result}"
         )
         self.assertIsInstance(result, str)
 

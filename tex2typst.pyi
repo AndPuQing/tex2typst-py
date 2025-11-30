@@ -1,36 +1,14 @@
-from typing import TypedDict
-
-class Tex2TypstOptions(TypedDict, total=False):
-    """
-    Options for LaTeX to Typst conversion.
-
-    Attributes:
-        nonStrict: Allow non-strict parsing (default: True)
-        preferShorthands: Prefer shorthand notation (default: True)
-        keepSpaces: Preserve spaces in output (default: False)
-        fracToSlash: Convert fractions to slash notation (default: True)
-        inftyToOo: Convert infinity symbol to oo (default: False)
-        optimize: Optimize output (default: True)
-        customTexMacros: Custom TeX macro definitions as a dict mapping macro names to their expansions
-    """
-    nonStrict: bool
-    preferShorthands: bool
-    keepSpaces: bool
-    fracToSlash: bool
-    inftyToOo: bool
-    optimize: bool
-    customTexMacros: dict[str, str]
-
-class Typst2TexOptions(TypedDict, total=False):
-    """
-    Options for Typst to LaTeX conversion.
-
-    Attributes:
-        blockMathMode: Use block math mode (default: True)
-    """
-    blockMathMode: bool
-
-def tex2typst(tex: str, options: Tex2TypstOptions | None = None) -> str:
+def tex2typst(
+    tex: str,
+    *,
+    non_strict: bool | None = None,
+    prefer_shorthands: bool | None = None,
+    keep_spaces: bool | None = None,
+    frac_to_slash: bool | None = None,
+    infty_to_oo: bool | None = None,
+    optimize: bool | None = None,
+    custom_tex_macros: dict[str, str] | None = None,
+) -> str:
     """
     Convert LaTeX/TeX math to Typst format.
 
@@ -39,7 +17,13 @@ def tex2typst(tex: str, options: Tex2TypstOptions | None = None) -> str:
 
     Args:
         tex: LaTeX/TeX math string to convert
-        options: Optional conversion options
+        non_strict: Allow non-strict parsing (default: library default)
+        prefer_shorthands: Prefer shorthand notation (default: library default)
+        keep_spaces: Preserve spaces in output (default: library default)
+        frac_to_slash: Convert fractions to slash notation (default: library default)
+        infty_to_oo: Convert infinity symbol to oo (default: library default)
+        optimize: Optimize output (default: library default)
+        custom_tex_macros: Custom TeX macro definitions as dict mapping macro names to expansions
 
     Returns:
         Converted Typst string
@@ -50,14 +34,16 @@ def tex2typst(tex: str, options: Tex2TypstOptions | None = None) -> str:
         '1/2'
         >>> tex2typst.tex2typst(r"\\alpha + \\beta")
         'alpha + beta'
-        >>> tex2typst.tex2typst(r"\\frac{1}{2}", {"fracToSlash": False})
+        >>> tex2typst.tex2typst(r"\\frac{1}{2}", frac_to_slash=False)
         'frac(1, 2)'
-        >>> tex2typst.tex2typst(r"\\infty", {"inftyToOo": True})
+        >>> tex2typst.tex2typst(r"\\infty", infty_to_oo=True)
         'oo'
+        >>> tex2typst.tex2typst(r"\\myop", custom_tex_macros={"\\\\myop": "\\\\operatorname{myop}"})
+        'op("myop")'
     """
     ...
 
-def typst2tex(typst: str, options: Typst2TexOptions | None = None) -> str:
+def typst2tex(typst: str, *, block_math_mode: bool | None = None) -> str:
     """
     Convert Typst math to LaTeX/TeX format.
 
@@ -66,7 +52,7 @@ def typst2tex(typst: str, options: Typst2TexOptions | None = None) -> str:
 
     Args:
         typst: Typst math string to convert
-        options: Optional conversion options
+        block_math_mode: Use block math mode (default: library default)
 
     Returns:
         Converted LaTeX/TeX string
@@ -77,7 +63,7 @@ def typst2tex(typst: str, options: Typst2TexOptions | None = None) -> str:
         '\\\\frac{1}{2}'
         >>> tex2typst.typst2tex("alpha + beta")
         '\\\\alpha + \\\\beta'
-        >>> tex2typst.typst2tex("x", {"blockMathMode": False})
+        >>> tex2typst.typst2tex("x", block_math_mode=False)
         'x'
     """
     ...

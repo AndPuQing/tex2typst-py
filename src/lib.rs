@@ -131,44 +131,14 @@ fn get_thread_converter() -> PyResult<()> {
     })
 }
 
-/// Convert Python dict to HashMap<String, serde_json::Value>
-fn pydict_to_hashmap(py_dict: &Bound<PyDict>) -> PyResult<HashMap<String, serde_json::Value>> {
+/// Convert Python dict to HashMap for custom_tex_macros
+fn pydict_to_string_map(py_dict: &Bound<PyDict>) -> PyResult<HashMap<String, String>> {
     let mut map = HashMap::new();
-
     for (key, value) in py_dict.iter() {
         let key_str: String = key.extract()?;
-
-        // Convert Python values to serde_json::Value
-        let json_value = if let Ok(b) = value.extract::<bool>() {
-            serde_json::Value::Bool(b)
-        } else if let Ok(i) = value.extract::<i64>() {
-            serde_json::Value::Number(i.into())
-        } else if let Ok(f) = value.extract::<f64>() {
-            serde_json::Value::Number(serde_json::Number::from_f64(f).ok_or_else(|| {
-                PyErr::new::<pyo3::exceptions::PyValueError, _>("Invalid float value")
-            })?)
-        } else if let Ok(s) = value.extract::<String>() {
-            serde_json::Value::String(s)
-        } else if value.is_instance_of::<PyDict>() {
-            // Handle nested dict (for customTexMacros)
-            let d = value.cast_into::<PyDict>()?;
-            let nested = pydict_to_hashmap(&d)?;
-            serde_json::to_value(nested).map_err(|e| {
-                PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                    "Failed to serialize nested dict: {}",
-                    e
-                ))
-            })?
-        } else {
-            return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "Unsupported type for key '{}'",
-                key_str
-            )));
-        };
-
-        map.insert(key_str, json_value);
+        let value_str: String = value.extract()?;
+        map.insert(key_str, value_str);
     }
-
     Ok(map)
 }
 
@@ -179,19 +149,68 @@ fn pydict_to_hashmap(py_dict: &Bound<PyDict>) -> PyResult<HashMap<String, serde_
 ///
 /// Args:
 ///     tex: LaTeX/TeX math string to convert
-///     options: Optional dictionary of conversion options
+///     non_strict: Allow non-strict parsing (default: None)
+///     prefer_shorthands: Prefer shorthand notation (default: None)
+///     keep_spaces: Preserve spaces in output (default: None)
+///     frac_to_slash: Convert fractions to slash notation (default: None)
+///     infty_to_oo: Convert infinity symbol to oo (default: None)
+///     optimize: Optimize output (default: None)
+///     custom_tex_macros: Custom TeX macro definitions (default: None)
 ///
 /// Returns:
 ///     Converted Typst string
 #[pyfunction]
-#[pyo3(signature = (tex, options=None))]
-fn tex2typst(tex: String, options: Option<&Bound<PyDict>>) -> PyResult<String> {
+#[pyo3(signature = (tex, *, non_strict=None, prefer_shorthands=None, keep_spaces=None, frac_to_slash=None, infty_to_oo=None, optimize=None, custom_tex_macros=None))]
+#[allow(clippy::too_many_arguments)]
+fn tex2typst(
+    tex: String,
+    non_strict: Option<bool>,
+    prefer_shorthands: Option<bool>,
+    keep_spaces: Option<bool>,
+    frac_to_slash: Option<bool>,
+    infty_to_oo: Option<bool>,
+    optimize: Option<bool>,
+    custom_tex_macros: Option<&Bound<PyDict>>,
+) -> PyResult<String> {
     get_thread_converter()?;
 
-    let opts = if let Some(py_dict) = options {
-        Some(pydict_to_hashmap(py_dict)?)
-    } else {
+    let mut options_map: HashMap<String, serde_json::Value> = HashMap::new();
+
+    if let Some(val) = non_strict {
+        options_map.insert("nonStrict".to_string(), serde_json::Value::Bool(val));
+    }
+    if let Some(val) = prefer_shorthands {
+        options_map.insert("preferShorthands".to_string(), serde_json::Value::Bool(val));
+    }
+    if let Some(val) = keep_spaces {
+        options_map.insert("keepSpaces".to_string(), serde_json::Value::Bool(val));
+    }
+    if let Some(val) = frac_to_slash {
+        options_map.insert("fracToSlash".to_string(), serde_json::Value::Bool(val));
+    }
+    if let Some(val) = infty_to_oo {
+        options_map.insert("inftyToOo".to_string(), serde_json::Value::Bool(val));
+    }
+    if let Some(val) = optimize {
+        options_map.insert("optimize".to_string(), serde_json::Value::Bool(val));
+    }
+    if let Some(macros) = custom_tex_macros {
+        let macro_map = pydict_to_string_map(macros)?;
+        options_map.insert(
+            "customTexMacros".to_string(),
+            serde_json::to_value(macro_map).map_err(|e| {
+                PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                    "Failed to serialize custom macros: {}",
+                    e
+                ))
+            })?,
+        );
+    }
+
+    let opts = if options_map.is_empty() {
         None
+    } else {
+        Some(options_map)
     };
 
     THREAD_CONVERTER.with(|converter| converter.borrow().as_ref().unwrap().tex2typst(&tex, opts))
@@ -204,17 +223,19 @@ fn tex2typst(tex: String, options: Option<&Bound<PyDict>>) -> PyResult<String> {
 ///
 /// Args:
 ///     typst: Typst math string to convert
-///     options: Optional dictionary of conversion options
+///     block_math_mode: Use block math mode (default: None)
 ///
 /// Returns:
 ///     Converted LaTeX/TeX string
 #[pyfunction]
-#[pyo3(signature = (typst, options=None))]
-fn typst2tex(typst: String, options: Option<&Bound<PyDict>>) -> PyResult<String> {
+#[pyo3(signature = (typst, *, block_math_mode=None))]
+fn typst2tex(typst: String, block_math_mode: Option<bool>) -> PyResult<String> {
     get_thread_converter()?;
 
-    let opts = if let Some(py_dict) = options {
-        Some(pydict_to_hashmap(py_dict)?)
+    let opts = if let Some(val) = block_math_mode {
+        let mut options_map: HashMap<String, serde_json::Value> = HashMap::new();
+        options_map.insert("blockMathMode".to_string(), serde_json::Value::Bool(val));
+        Some(options_map)
     } else {
         None
     };
