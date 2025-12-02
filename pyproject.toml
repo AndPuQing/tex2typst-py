@@ -61,3 +61,7 @@ test = [
     "pytest>=7.0",
     "pytest-benchmark>=4.0",
 ]
+
+[tool.maturin]
+python-source = "."
+module-name = "tex2typst._tex2typst_core"

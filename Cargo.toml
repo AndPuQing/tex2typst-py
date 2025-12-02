@@ -4,7 +4,7 @@ version = "0.1.5"
 edition = "2024"
 
 [lib]
-name = "tex2typst"
+name = "_tex2typst_core"
 crate-type = ["cdylib"]
 
 [dependencies]

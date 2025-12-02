@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use rquickjs::{CatchResultExt, CaughtError, Context, Function, Runtime};
+use rquickjs::{CatchResultExt, CaughtError, Context, Function, Object, Runtime};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -54,7 +54,6 @@ impl ConverterInstance {
     ) -> PyResult<String> {
         self.ctx.with(|ctx| {
             let globals = ctx.globals();
-
             let func: Function = globals.get("tex2typst").map_err(|_| {
                 PyErr::new::<pyo3::exceptions::PyAttributeError, _>(
                     "Global function 'tex2typst' not found.",
@@ -62,15 +61,74 @@ impl ConverterInstance {
             })?;
 
             let result: String = if let Some(opts) = options {
-                // Create JavaScript object from options
-                let js_options = ctx
-                    .json_parse(serde_json::to_string(&opts).unwrap())
-                    .map_err(|e| {
-                        PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                            "Options parse failed: {}",
-                            e
-                        ))
-                    })?;
+                // Direct object construction (OPTIMIZATION: avoid full JSON serialization)
+                let js_options = Object::new(ctx.clone()).map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                        "Failed to create JS object: {}",
+                        e
+                    ))
+                })?;
+
+                // Set properties directly without JSON serialization
+                for (key, value) in opts.iter() {
+                    match value {
+                        serde_json::Value::Bool(b) => {
+                            js_options.set(key.as_str(), *b).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to set bool property: {}",
+                                    e
+                                ))
+                            })?;
+                        }
+                        serde_json::Value::String(s) => {
+                            js_options.set(key.as_str(), s.as_str()).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to set string property: {}",
+                                    e
+                                ))
+                            })?;
+                        }
+                        serde_json::Value::Object(obj) => {
+                            let nested_obj = Object::new(ctx.clone()).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to create nested object: {}",
+                                    e
+                                ))
+                            })?;
+                            for (k, v) in obj.iter() {
+                                if let serde_json::Value::String(s) = v {
+                                    nested_obj.set(k.as_str(), s.as_str()).map_err(|e| {
+                                        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                            "Failed to set nested property: {}",
+                                            e
+                                        ))
+                                    })?;
+                                }
+                            }
+                            js_options.set(key.as_str(), nested_obj).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to set object property: {}",
+                                    e
+                                ))
+                            })?;
+                        }
+                        _ => {
+                            // Fallback to JSON for other types
+                            let js_val = ctx.json_parse(value.to_string()).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                                    "Options parse failed: {}",
+                                    e
+                                ))
+                            })?;
+                            js_options.set(key.as_str(), js_val).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to set property: {}",
+                                    e
+                                ))
+                            })?;
+                        }
+                    }
+                }
 
                 func.call((tex, js_options)).catch(&ctx).map_err(|e| {
                     PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
@@ -98,7 +156,6 @@ impl ConverterInstance {
     ) -> PyResult<String> {
         self.ctx.with(|ctx| {
             let globals = ctx.globals();
-
             let func: Function = globals.get("typst2tex").map_err(|_| {
                 PyErr::new::<pyo3::exceptions::PyAttributeError, _>(
                     "Global function 'typst2tex' not found.",
@@ -106,15 +163,42 @@ impl ConverterInstance {
             })?;
 
             let result: String = if let Some(opts) = options {
-                // Create JavaScript object from options
-                let js_options = ctx
-                    .json_parse(serde_json::to_string(&opts).unwrap())
-                    .map_err(|e| {
-                        PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                            "Options parse failed: {}",
-                            e
-                        ))
-                    })?;
+                // Direct object construction (OPTIMIZATION: avoid full JSON serialization)
+                let js_options = Object::new(ctx.clone()).map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                        "Failed to create JS object: {}",
+                        e
+                    ))
+                })?;
+
+                // Set properties directly without JSON serialization
+                for (key, value) in opts.iter() {
+                    match value {
+                        serde_json::Value::Bool(b) => {
+                            js_options.set(key.as_str(), *b).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to set bool property: {}",
+                                    e
+                                ))
+                            })?;
+                        }
+                        _ => {
+                            // Fallback to JSON for other types
+                            let js_val = ctx.json_parse(value.to_string()).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                                    "Options parse failed: {}",
+                                    e
+                                ))
+                            })?;
+                            js_options.set(key.as_str(), js_val).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                                    "Failed to set property: {}",
+                                    e
+                                ))
+                            })?;
+                        }
+                    }
+                }
 
                 func.call((typst, js_options)).catch(&ctx).map_err(|e| {
                     PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
@@ -193,7 +277,8 @@ fn tex2typst(
 ) -> PyResult<String> {
     get_thread_converter()?;
 
-    let mut options_map: HashMap<String, serde_json::Value> = HashMap::new();
+    // Pre-allocate with capacity for 7 possible options (OPTIMIZATION #4)
+    let mut options_map: HashMap<String, serde_json::Value> = HashMap::with_capacity(7);
 
     if let Some(val) = non_strict {
         options_map.insert("nonStrict".to_string(), serde_json::Value::Bool(val));
@@ -263,7 +348,7 @@ fn typst2tex(typst: String, block_math_mode: Option<bool>) -> PyResult<String> {
 }
 
 #[pymodule]
-#[pyo3(name = "tex2typst")]
+#[pyo3(name = "_tex2typst_core")]
 fn tex2typst_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tex2typst, m)?)?;
     m.add_function(wrap_pyfunction!(typst2tex, m)?)?;
