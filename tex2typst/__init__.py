@@ -127,21 +127,18 @@ def tex2typst(
             macros_tuple,
         )
     elif isinstance(tex, list):
-        # List: process each item with caching
-        macros_tuple = _make_hashable(custom_tex_macros)
-        return [
-            _tex2typst_cached(
-                item,
-                non_strict,
-                prefer_shorthands,
-                keep_spaces,
-                frac_to_slash,
-                infty_to_oo,
-                optimize,
-                macros_tuple,
-            )
-            for item in tex
-        ]
+        # List: use batch processing API for better performance
+        # Batch API processes all items in one Rust/JS context entry, reducing overhead
+        return _tex2typst_core.tex2typst_batch(
+            tex,
+            non_strict=non_strict,
+            prefer_shorthands=prefer_shorthands,
+            keep_spaces=keep_spaces,
+            frac_to_slash=frac_to_slash,
+            infty_to_oo=infty_to_oo,
+            optimize=optimize,
+            custom_tex_macros=custom_tex_macros,
+        )
     else:
         raise TypeError(f"Expected str or list, got {type(tex).__name__}")
 
@@ -198,7 +195,11 @@ def typst2tex(
     if isinstance(typst, str):
         return _typst2tex_cached(typst, block_math_mode)
     elif isinstance(typst, list):
-        return [_typst2tex_cached(item, block_math_mode) for item in typst]
+        # List: use batch processing API internally for better performance
+        return _tex2typst_core.typst2tex_batch(
+            typst,
+            block_math_mode=block_math_mode,
+        )
     else:
         raise TypeError(f"Expected str or list, got {type(typst).__name__}")
 

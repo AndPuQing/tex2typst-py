@@ -61,18 +61,25 @@ class TestListInput(unittest.TestCase):
         self.assertEqual(results, [])
 
     def test_list_caching(self):
-        """Test that list items benefit from caching"""
+        """Test that single strings use cache, while lists use batch processing"""
         tex2typst.clear_cache()
 
-        # First conversion
-        tex2typst.tex2typst([r"\alpha", r"\beta"])
-
-        # Second conversion with repeated items
-        tex2typst.tex2typst([r"\alpha", r"\gamma"])  # \alpha should be cached
+        # Single string conversions use cache
+        tex2typst.tex2typst(r"\alpha")
+        tex2typst.tex2typst(r"\beta")
+        tex2typst.tex2typst(r"\alpha")  # Should hit cache
 
         info = tex2typst.cache_info()
-        self.assertGreater(info["tex2typst"].hits, 0)
-        self.assertEqual(info["tex2typst"].currsize, 3)  # alpha, beta, gamma
+        self.assertGreater(info["tex2typst"].hits, 0, "Single strings should use cache")
+
+        # List conversions use batch processing (bypasses cache for performance)
+        tex2typst.clear_cache()
+        tex2typst.tex2typst([r"\alpha", r"\beta"])
+        tex2typst.tex2typst([r"\alpha", r"\gamma"])
+
+        info = tex2typst.cache_info()
+        # Batch API doesn't go through Python-level cache
+        self.assertEqual(info["tex2typst"].hits, 0, "Lists use batch API, not cache")
 
     def test_invalid_type(self):
         """Test that invalid types raise TypeError"""

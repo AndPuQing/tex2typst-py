@@ -1,9 +1,12 @@
 """Type stubs for tex2typst module."""
 
+from typing import overload
+
 __version__: str
 
-__all__ = ["tex2typst", "typst2tex", "__version__"]
+__all__ = ["tex2typst", "typst2tex", "clear_cache", "cache_info", "__version__"]
 
+@overload
 def tex2typst(
     tex: str,
     *,
@@ -49,6 +52,22 @@ def tex2typst(
     """
     ...
 
+@overload
+def tex2typst(
+    tex: list[str],
+    *,
+    non_strict: bool | None = None,
+    prefer_shorthands: bool | None = None,
+    keep_spaces: bool | None = None,
+    frac_to_slash: bool | None = None,
+    infty_to_oo: bool | None = None,
+    optimize: bool | None = None,
+    custom_tex_macros: dict[str, str] | None = None,
+) -> list[str]:
+    """Convert multiple LaTeX/TeX strings to Typst format (with caching)."""
+    ...
+
+@overload
 def typst2tex(typst: str, *, block_math_mode: bool | None = None) -> str:
     """
     Convert Typst math to LaTeX/TeX format.
@@ -72,4 +91,17 @@ def typst2tex(typst: str, *, block_math_mode: bool | None = None) -> str:
         >>> tex2typst.typst2tex("x", block_math_mode=False)
         'x'
     """
+    ...
+
+@overload
+def typst2tex(typst: list[str], *, block_math_mode: bool | None = None) -> list[str]:
+    """Convert multiple Typst strings to LaTeX/TeX format (with caching)."""
+    ...
+
+def clear_cache() -> None:
+    """Clear all cached conversion results."""
+    ...
+
+def cache_info() -> dict[str, object]:
+    """Get cache statistics for tex2typst and typst2tex."""
     ...
